@@ -1,22 +1,129 @@
-Project Architecture
-GamingPC: The main model holding PC specs (CPU, GPU, RAM, storage, OS, cooling).
+# Gaming PC Builder
 
-GamingPC.Builder: Builder class that handles step-by-step configuration with method chaining.
+Assignment project uses the **Builder Design Pattern** in Java for making custom gaming PC configurations.
 
-GamingPCDirector: Predefines preset builds so you don't have to manually configure common rigs (like budget or high-end options).
+---
 
-Main: Tests the builder and prints out the results.
+## 1. Product & Architecture
 
-Method Chaining
-Setters in Builder return this so calls can be chained together:
+A gaming PC consists of multiple optional and required components (CPU, GPU, RAM, Storage, OS, Cooling). Constructing it through a giant constructor can lead to confusing parameter lists. The Builder pattern isolates object creation logic and provides standard presets.
+
+### Pattern Components
+* **`GamingPC`**: Product class representing the complex PC configuration
+* **`GamingPC.Builder`**: Inner builder class handling step-by-step setup with method chaining
+* **`GamingPCDirector`**: Pre-configures standard builds (Budget vs. High-End)
+* **`Main`**: Client class demonstrating the builder and printing configurations
+---
+
+## 2. Clean Code Principles Applied
+
+### Principle 1: Meaningful Names
+**Before:**
+```
+void set1(String x) { this.x = x; }
 
 ```
-public Builder setRam(int ram) {
-    this.ram = ram;
+
+**After:**
+
+```
+public Builder setOperatingSystem(String operatingSystem) {
+    this.operatingSystem = operatingSystem;
     return this;
 }
+
 ```
-Creating a PC looks like this:
+
+*Why:* Method names state explicitly which component is being assigned, avoiding confusion during setup.
+
+---
+
+### Principle 2: Small Methods & Single Responsibility
+
+**Before:**
+
+```
+public GamingPC build() {
+    if (cpu == null || gpu == null) {
+        throw new IllegalStateException("Missing core hardware");
+    }
+    return new GamingPC(this);
+}
+
+```
+
+**After:**
+
+```
+public GamingPC build() {
+    validate();
+    return new GamingPC(this);
+}
+
+private void validate() {
+    if (cpu == null || gpu == null) {
+        throw new IllegalStateException("CPU and GPU are required.");
+    }
+}
+
+```
+
+*Why:* `build()` delegates checking logic to a dedicated `validate()` helper method, keeping each method small and focused on one task.
+
+---
+
+### Principle 3: Single Responsibility Principle (SRP)
+
+**Before:**
+`GamingPC` class directly handled preset choices, console rendering, and construction state inside a single file.
+
+**After:**
+Split into dedicated classes:
+
+* `GamingPC` stores state.
+* `GamingPC.Builder` builds instances.
+* `GamingPCDirector` handles preset templates.
+* `Main` runs execution tests.
+
+---
+
+### Principle 4: Validated Construction
+
+**Before:**
+
+```
+
+public GamingPC build() {
+    return new GamingPC(this);
+}
+
+```
+
+**After:**
+
+```
+private void validate() {
+    if (ram <= 0 || storage <= 0) {
+        throw new IllegalArgumentException("RAM and Storage must be positive values.");
+    }
+}
+
+```
+
+*Why:* Ensures invalid or broken objects are never instantiated, throwing immediate exceptions on invalid input.
+
+---
+
+### Principle 5: Replacing Magic Arguments with Explicit Calls
+
+**Before:**
+
+```
+GamingPC pc = new GamingPC("Intel i5", "RTX 4060", 16, 512, "Win11", "Air");
+
+```
+
+**After:**
 
 ```
 GamingPC pc = new GamingPC.Builder()
@@ -25,14 +132,5 @@ GamingPC pc = new GamingPC.Builder()
         .setRam(16)
         .setStorage(512)
         .build();
+
 ```
-Clean Code Notes
-Clear naming: Setters are named directly after what they set (setOperatingSystem) instead of using vague names.
-
-Refactored build(): Keeps build() clean by moving data checks into a separate validate() helper.
-
-Single Responsibility: Everything is separated into its own class (Model, Builder, Director, and Main runner).
-
-Validation: Checks for missing components before returning the instance and throws an exception if something vital is missing.
-
-No positional argument mess: Setters make it clear what each value belongs to.
